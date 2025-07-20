@@ -1,0 +1,357 @@
+\<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discover Your Spirit Animal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Royal Purple & Lavender Hues -->
+    <!-- Application Structure Plan: This application is designed as a step-by-step interactive personality quiz. The structure uses a single-question-per-page view to minimize cognitive load and maintain user focus. "Previous" and "Next" navigation buttons allow users to review their answers. Once all questions are answered, a "Complete Quiz" button appears, leading to a results screen. The results screen will display the user's determined spirit animal, an associated mythical image, and qualitative feedback. This structure is chosen for its intuitive flow for a quiz format, providing a guided and engaging user experience. -->
+    <!-- Visualization & Content Choices: 
+    - Report: Quiz Questions & Answers -> Goal: Assess personality traits -> Presentation: Text questions & Multiple choice (HTML Radio Buttons) -> Interaction: Select answer, navigate between questions -> Justification: Standard quiz format, easy to understand and complete.
+    - Report: Spirit Animal Result -> Goal: Provide personalized outcome -> Presentation: Text name & Mythical Animal Image (HTML img) -> Interaction: Automatic after quiz completion -> Justification: Engaging visual feedback directly tied to user input.
+    - Report: Feedback Message -> Goal: Offer qualitative insight -> Presentation: Text message (HTML) -> Interaction: Automatic after quiz completion -> Justification: Provides context to the result and reinforces the spiritual theme.
+    - Report: Quiz Navigation -> Goal: Guide user through the quiz -> Presentation: "Previous", "Next", "Complete" Buttons (HTML Buttons) -> Interaction: Click to advance/finish -> Justification: Clear user control for progression.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F0FF; /* Light Lavender */
+            color: #4A006A; /* Deep Purple */
+        }
+        .btn-primary {
+            background-color: #8A2BE2; /* Blue Violet */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #6A1BBF; /* Darker Blue Violet */
+        }
+        .btn-secondary {
+            background-color: #DDA0DD; /* Plum */
+            color: #4A006A;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s;
+        }
+        .btn-secondary:hover {
+            background-color: #C182C1; /* Darker Plum */
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #8A2BE2; /* Blue Violet */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="antialiased flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white p-8 rounded-lg shadow-xl max-w-2xl w-full">
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="text-center">
+            <h1 class="text-3xl font-bold mb-4">Discover Your Spirit Animal!</h1>
+            <p class="text-lg mb-6 text-gray-700">Uncover the mystical creature that guides your spirit. Ready to begin your journey?</p>
+            <button id="start-test-btn" class="btn-primary text-xl">Start Quiz</button>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" class="hidden">
+            <h2 id="question-number" class="text-xl font-semibold mb-4 text-gray-600"></h2>
+            <p id="question-text" class="text-2xl font-bold mb-6"></p>
+            <div id="answer-options" class="space-y-4">
+                <!-- Answers will be loaded here by JS -->
+            </div>
+            <div class="flex justify-between mt-8">
+                <button id="prev-btn" class="btn-secondary" style="visibility: hidden;">Previous</button>
+                <button id="next-btn" class="btn-primary">Next</button>
+                <button id="submit-test-btn" class="btn-primary hidden">Complete Quiz</button>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen" class="hidden text-center">
+            <h2 class="text-3xl font-bold mb-4">Your Spirit Animal Revealed!</h2>
+            <p id="spirit-animal-name" class="text-4xl font-extrabold mb-4 text-[#4A006A]"></p>
+            <div class="my-6">
+                <img id="spirit-animal-image" src="" alt="Spirit Animal Image" class="mx-auto rounded-lg shadow-md max-w-full h-auto">
+            </div>
+            <p id="feedback-text" class="text-xl text-gray-700 mb-8"></p>
+            
+            <button id="get-detailed-guidance-btn" class="btn-primary mt-6">Dapatkan Panduan Detail Anda!</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "When faced with a challenge, what is your first instinct?",
+                options: [
+                    { text: "To trust your gut feeling and follow your instincts.", type: "Wolf" },
+                    { text: "To retreat and gather your inner strength before acting.", type: "Bear" },
+                    { text: "To step back and gain a broader perspective.", type: "Eagle" },
+                    { text: "To approach it with gentleness and seek harmony.", type: "Deer" }
+                ]
+            },
+            {
+                question: "What do you value most in your relationships?",
+                options: [
+                    { text: "Deep loyalty and a strong sense of pack.", type: "Wolf" },
+                    { text: "Unwavering support and a comforting presence.", type: "Bear" },
+                    { text: "Shared vision and intellectual connection.", type: "Eagle" },
+                    { text: "Empathy and mutual understanding.", type: "Deer" }
+                ]
+            },
+            {
+                question: "How do you recharge your energy?",
+                options: [
+                    { text: "By spending time with your close circle or community.", type: "Wolf" },
+                    { text: "By finding solitude and quiet introspection.", type: "Bear" },
+                    { text: "By exploring new ideas and expanding your horizons.", type: "Eagle" },
+                    { text: "By connecting with nature and finding peaceful moments.", type: "Deer" }
+                ]
+            },
+            {
+                question: "What is your natural leadership style?",
+                options: [
+                    { text: "Leading by example, guiding the pack.", type: "Wolf" },
+                    { text: "Providing a strong, protective presence.", type: "Bear" },
+                    { text: "Inspiring others with a clear vision.", type: "Eagle" },
+                    { text: "Guiding with compassion and understanding.", type: "Deer" }
+                ]
+            },
+            {
+                question: "Which quality do you admire most in others?",
+                options: [
+                    { text: "Their strong intuition and ability to navigate life.", type: "Wolf" },
+                    { text: "Their resilience and protective nature.", type: "Bear" },
+                    { text: "Their foresight and ability to see possibilities.", type: "Eagle" },
+                    { text: "Their kindness and gentle spirit.", type: "Deer" }
+                ]
+            },
+            {
+                question: "How do you approach learning new things?",
+                options: [
+                    { text: "Through direct experience and following your instincts.", type: "Wolf" },
+                    { text: "By deeply studying and internalizing the knowledge.", type: "Bear" },
+                    { text: "By seeking higher perspectives and understanding the big picture.", type: "Eagle" },
+                    { text: "With an open heart and a sensitive approach.", type: "Deer" }
+                ]
+            },
+            {
+                question: "What kind of environment do you thrive in?",
+                options: [
+                    { text: "A close-knit community where everyone supports each other.", type: "Wolf" },
+                    { text: "A peaceful, natural setting where you feel grounded.", type: "Bear" },
+                    { text: "Open spaces with vast views, allowing for clarity.", type: "Eagle" },
+                    { text: "A serene and harmonious place, full of beauty.", type: "Deer" }
+                ]
+            },
+            {
+                question: "When making important decisions, what guides you most?",
+                options: [
+                    { text: "Your strong inner voice and intuition.", type: "Wolf" },
+                    { text: "A deep sense of inner knowing and stability.", type: "Bear" },
+                    { text: "Your ability to see patterns and future possibilities.", type: "Eagle" },
+                    { text: "Your empathy and consideration for others' feelings.", type: "Deer" }
+                ]
+            },
+            {
+                question: "What is your biggest fear?",
+                options: [
+                    { text: "Losing your freedom or independence.", type: "Wolf" },
+                    { text: "Feeling powerless or vulnerable.", type: "Bear" },
+                    { text: "Losing your vision or purpose.", type: "Eagle" },
+                    { text: "Causing harm or being misunderstood.", type: "Deer" }
+                ]
+            },
+            {
+                question: "If you could possess a magical ability, what would it be?",
+                options: [
+                    { text: "The ability to communicate telepathically with your chosen few.", type: "Wolf" },
+                    { text: "The power to heal and restore balance.", type: "Bear" },
+                    { text: "The gift of seeing far into the future.", type: "Eagle" },
+                    { text: "The power to soothe and bring peace to any situation.", type: "Deer" }
+                ]
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let userAnswers = new Array(questions.length).fill(null); 
+        let currentSpiritAnimal = ""; // To store the determined spirit animal
+
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultsScreen = document.getElementById('results-screen');
+
+        const startTestBtn = document.getElementById('start-test-btn');
+        const questionNumberElem = document.getElementById('question-number');
+        const questionTextElem = document.getElementById('question-text');
+        const answerOptionsElem = document.getElementById('answer-options');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const submitTestBtn = document.getElementById('submit-test-btn');
+        const spiritAnimalNameElem = document.getElementById('spirit-animal-name');
+        const spiritAnimalImageElem = document.getElementById('spirit-animal-image');
+        const feedbackTextElem = document.getElementById('feedback-text');
+        const getDetailedGuidanceBtn = document.getElementById('get-detailed-guidance-btn'); // New button element
+
+        startTestBtn.addEventListener('click', startTest);
+        nextBtn.addEventListener('click', showNextQuestion);
+        prevBtn.addEventListener('click', showPrevQuestion);
+        submitTestBtn.addEventListener('click', calculateResults);
+        getDetailedGuidanceBtn.addEventListener('click', () => { // Event listener for the new button
+            window.location.href = 'https://www.etsy.com/listing/1752531614/emotional-regulation-bundlezones-of?ls=a&ga_order=most_relevant&ga_search_type=all&ga_view_type=gallery&ga_search_query=what+is+your+colour%3F&ref=sc_gallery-1-3&pro=1&bes=1&sts=1&dd=1&plkey=3b29993e8f9424d7ffd9c26379759e5b67cd2d63%3A1752531614';
+        });
+
+        function startTest() {
+            welcomeScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+            currentQuestionIndex = 0;
+            userAnswers.fill(null); 
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const q = questions[currentQuestionIndex];
+            questionNumberElem.textContent = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
+            questionTextElem.textContent = q.question;
+            answerOptionsElem.innerHTML = '';
+
+            q.options.forEach((option, index) => {
+                const div = document.createElement('div');
+                div.classList.add('flex', 'items-center');
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.id = `option-${currentQuestionIndex}-${index}`;
+                input.name = `answer-${currentQuestionIndex}`;
+                input.value = option.text;
+                input.classList.add('h-4', 'w-4', 'text-[#8A2BE2]', 'focus:ring-[#8A2BE2]', 'border-gray-300', 'rounded');
+                
+                if (userAnswers[currentQuestionIndex] === option.text) {
+                    input.checked = true;
+                }
+
+                input.addEventListener('change', (event) => {
+                    userAnswers[currentQuestionIndex] = event.target.value;
+                });
+
+                const label = document.createElement('label');
+                label.htmlFor = `option-${currentQuestionIndex}-${index}`;
+                label.classList.add('ml-3', 'text-lg', 'font-medium', 'text-gray-700', 'cursor-pointer');
+                label.textContent = option.text;
+
+                div.appendChild(input);
+                div.appendChild(label);
+                answerOptionsElem.appendChild(div);
+            });
+
+            updateNavigationButtons();
+        }
+
+        function updateNavigationButtons() {
+            prevBtn.style.visibility = currentQuestionIndex === 0 ? 'hidden' : 'visible';
+            if (currentQuestionIndex === questions.length - 1) {
+                nextBtn.classList.add('hidden');
+                submitTestBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                submitTestBtn.classList.add('hidden');
+            }
+        }
+
+        function showNextQuestion() {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            }
+        }
+
+        function showPrevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            }
+        }
+
+        function calculateResults() {
+            let wolfScore = 0;
+            let bearScore = 0;
+            let eagleScore = 0;
+            let deerScore = 0;
+
+            userAnswers.forEach((answer, index) => {
+                const question = questions[index];
+                const selectedOption = question.options.find(opt => opt.text === answer);
+                if (selectedOption) {
+                    if (selectedOption.type === "Wolf") wolfScore++;
+                    else if (selectedOption.type === "Bear") bearScore++;
+                    else if (selectedOption.type === "Eagle") eagleScore++;
+                    else if (selectedOption.type === "Deer") deerScore++;
+                }
+            });
+
+            const scores = {
+                "Wolf": wolfScore,
+                "Bear": bearScore,
+                "Eagle": eagleScore,
+                "Deer": deerScore
+            };
+
+            let highestScore = 0;
+            let imageUrl = "https://placehold.co/400x300/D1D5DB/4A006A?text=Mystical+Spirit"; // Updated placeholder color
+            let feedback = "Your spirit is unique and balanced! You embody a mix of wonderful qualities. Keep exploring your inner wisdom and the magic within you.";
+
+            let dominantAnimals = [];
+            for (const animal in scores) {
+                if (scores[animal] > highestScore) {
+                    highestScore = scores[animal];
+                    dominantAnimals = [animal];
+                } else if (scores[animal] === highestScore && highestScore > 0) {
+                    dominantAnimals.push(animal);
+                }
+            }
+
+            if (dominantAnimals.length === 1) {
+                currentSpiritAnimal = dominantAnimals[0];
+                if (currentSpiritAnimal === "Wolf") {
+                    imageUrl = "https://placehold.co/400x300/6A1BBF/FFFFFF?text=Wolf+Spirit"; // Updated placeholder color
+                    feedback = "Your spirit animal is the Wolf! You are intuitive, loyal, and possess strong instincts. You thrive in close-knit communities and value freedom. Embrace your inner guide!";
+                } else if (currentSpiritAnimal === "Bear") {
+                    imageUrl = "https://placehold.co/400x300/8A2BE2/FFFFFF?text=Bear+Spirit"; // Updated placeholder color
+                    feedback = "Your spirit animal is the Bear! You embody strength, courage, and a deep connection to introspection. You are a protector and a healer. Find your grounding!";
+                } else if (currentSpiritAnimal === "Eagle") {
+                    imageUrl = "https://placehold.co/400x300/DDA0DD/FFFFFF?text=Eagle+Spirit"; // Updated placeholder color
+                    feedback = "Your spirit animal is the Eagle! You have a keen vision, a broad perspective, and a strong spiritual connection. You are a natural leader with foresight. Soar to new heights!";
+                } else if (currentSpiritAnimal === "Deer") {
+                    imageUrl = "https://placehold.co/400x300/C182C1/FFFFFF?text=Deer+Spirit"; // Updated placeholder color
+                    feedback = "Your spirit animal is the Deer! You are gentle, sensitive, and possess a graceful spirit. You approach life with empathy and seek harmony. Embrace your compassionate heart!";
+                }
+            } else if (dominantAnimals.length > 1) {
+                currentSpiritAnimal = "Balanced Spirit";
+                imageUrl = "https://placehold.co/400x300/F8F0FF/4A006A?text=Balanced+Spirit"; // Updated placeholder color
+                feedback = `Your spirit embodies a beautiful blend of energies, showing strong traits of ${dominantAnimals.join(' and ')}. You are well-rounded and adaptable!`;
+            } else {
+                currentSpiritAnimal = "Mystical Spirit"; // Fallback if no answers selected or all scores are zero
+            }
+
+            quizScreen.classList.add('hidden');
+            resultsScreen.classList.remove('hidden');
+
+            spiritAnimalNameElem.textContent = `${currentSpiritAnimal}`;
+            spiritAnimalImageElem.src = imageUrl;
+            feedbackTextElem.textContent = feedback;
+        }
+    </script>
+</body>
+</html>

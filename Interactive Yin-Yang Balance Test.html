@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yin-Yang Balance Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-left-color: #60a5fa; /* blue-400 */
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white flex items-center justify-center min-h-screen p-4">
+
+    <div id="quiz-container" class="bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-2xl max-w-2xl w-full mx-auto border border-slate-700">
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="fade-in">
+            <div class="text-center">
+                <!-- Classic Yin-Yang Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mx-auto mb-4 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z"/><path d="M12 3a9 9 0 0 0 9 9h-9Z"/></svg>
+                <h1 class="text-3xl sm:text-4xl font-bold text-white mb-2">Discover Your Inner Balance</h1>
+                <p class="text-blue-300 text-lg mb-6">A Yin-Yang Assessment</p>
+            </div>
+            <div class="text-slate-300 space-y-4 text-left">
+                <p>Welcome. This assessment is designed to provide insight into your unique energetic composition based on the ancient principles of Yin and Yang. These two opposing, yet complementary, forces exist within everything, including ourselves.</p>
+                <ul class="list-disc list-inside space-y-2 pl-2">
+                    <li><strong class="text-white">Yin</strong> represents stillness, intuition, introspection, and the feminine energy.</li>
+                    <li><strong class="text-white">Yang</strong> represents action, logic, expression, and the masculine energy.</li>
+                </ul>
+                <p>A healthy life involves a dynamic balance of both. This test will help you understand your current inclination. Answer the following 10 questions honestly based on your general tendencies.</p>
+            </div>
+            <div class="mt-8 text-center">
+                <button id="start-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105 w-full sm:w-auto">
+                    Begin the Assessment
+                </button>
+            </div>
+        </div>
+
+        <!-- Question Screen -->
+        <div id="question-screen" class="hidden">
+            <div id="progress-container" class="w-full bg-slate-700 rounded-full h-2.5 mb-6">
+                <div id="progress-bar" class="bg-blue-500 h-2.5 rounded-full" style="width: 0%"></div>
+            </div>
+            <h2 id="question-text" class="text-2xl font-semibold mb-6 text-center"></h2>
+            <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Options will be injected here by JS -->
+            </div>
+        </div>
+
+        <!-- Loading Screen -->
+        <div id="loading-screen" class="hidden text-center py-12">
+            <div class="spinner mx-auto mb-4"></div>
+            <p class="text-xl text-slate-300">Analyzing your energetic signature...</p>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="hidden fade-in">
+            <h2 class="text-3xl font-bold text-center mb-2" id="result-title"></h2>
+            <p class="text-blue-300 text-lg text-center mb-6" id="result-subtitle"></p>
+            <div class="bg-slate-900/50 p-6 rounded-lg border border-slate-700">
+                <div id="result-description" class="space-y-4 text-slate-300"></div>
+            </div>
+        </div>
+        
+        <footer class="text-center mt-8 text-sm text-slate-500">
+            <p>Powered by Indoemotes</p>
+        </footer>
+
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const startScreen = document.getElementById('start-screen');
+        const questionScreen = document.getElementById('question-screen');
+        const loadingScreen = document.getElementById('loading-screen');
+        const resultScreen = document.getElementById('result-screen');
+
+        const startBtn = document.getElementById('start-btn');
+
+        const progressBar = document.getElementById('progress-bar');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+
+        const resultTitle = document.getElementById('result-title');
+        const resultSubtitle = document.getElementById('result-subtitle');
+        const resultDescription = document.getElementById('result-description');
+
+        // --- Quiz Data ---
+        const questions = [
+            {
+                question: "When facing a major life decision, you primarily rely on:",
+                answers: [
+                    { text: "Detailed analysis, pros and cons, and logical reasoning.", type: 'yang' },
+                    { text: "Your gut feeling, intuition, and how the decision 'feels'.", type: 'yin' }
+                ]
+            },
+            {
+                question: "How would you describe your ideal weekend?",
+                answers: [
+                    { text: "Active and social: exploring new places, meeting friends, or pursuing hobbies.", type: 'yang' },
+                    { text: "Restful and quiet: reading, relaxing at home, or gentle activities in nature.", type: 'yin' }
+                ]
+            },
+            {
+                question: "In a group project, you are more likely to:",
+                answers: [
+                    { text: "Take charge, delegate tasks, and drive the project forward.", type: 'yang' },
+                    { text: "Listen to all ideas, facilitate harmony, and ensure everyone feels included.", type: 'yin' }
+                ]
+            },
+            {
+                question: "When you feel stressed, your first instinct is to:",
+                answers: [
+                    { text: "Take action: tackle the problem head-on or distract yourself with activity.", type: 'yang' },
+                    { text: "Withdraw: seek solitude to process your feelings and recharge.", type: 'yin' }
+                ]
+            },
+            {
+                question: "Your communication style is generally:",
+                answers: [
+                    { text: "Direct, clear, and to the point.", type: 'yang' },
+                    { text: "Nuanced, considerate of others' feelings, and indirect.", type: 'yin' }
+                ]
+            },
+            {
+                question: "Which environment energizes you more?",
+                answers: [
+                    { text: "A bustling city, a lively party, or a competitive event.", type: 'yang' },
+                    { text: "A quiet library, a serene forest, or your own peaceful home.", type: 'yin' }
+                ]
+            },
+            {
+                question: "When learning something new, you prefer:",
+                answers: [
+                    { text: "A structured, step-by-step curriculum with clear objectives.", type: 'yang' },
+                    { text: "An exploratory, open-ended approach where you can follow your curiosity.", type: 'yin' }
+                ]
+            },
+            {
+                question: "How do you typically manage your energy throughout the day?",
+                answers: [
+                    { text: "In bursts of high productivity, often pushing through fatigue.", type: 'yang' },
+                    { text: "Pacing yourself steadily, taking breaks when needed to conserve energy.", type: 'yin' }
+                ]
+            },
+            {
+                question: "When it comes to change, you are:",
+                answers: [
+                    { text: "Excited by it, seeing it as an opportunity for growth and action.", type: 'yang' },
+                    { text: "Cautious, preferring stability and needing time to adapt.", type: 'yin' }
+                ]
+            },
+            {
+                question: "Your inner world is best described as:",
+                answers: [
+                    { text: "A focused mind, oriented towards goals and external achievements.", type: 'yang' },
+                    { text: "A rich landscape of emotions, dreams, and abstract thoughts.", type: 'yin' }
+                ]
+            }
+        ];
+
+        // --- State ---
+        let currentQuestionIndex = 0;
+        let yinScore = 0;
+        let yangScore = 0;
+
+        // --- Functions ---
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            yinScore = 0;
+            yangScore = 0;
+            startScreen.classList.add('hidden');
+            resultScreen.classList.add('hidden');
+            questionScreen.classList.remove('hidden');
+            questionScreen.classList.add('fade-in');
+            showQuestion();
+        }
+
+        function showQuestion() {
+            questionScreen.classList.remove('fade-in');
+            void questionScreen.offsetWidth; 
+            questionScreen.classList.add('fade-in');
+
+            const question = questions[currentQuestionIndex];
+            questionText.textContent = question.question;
+            optionsContainer.innerHTML = '';
+
+            question.answers.forEach(answer => {
+                const button = document.createElement('button');
+                button.textContent = answer.text;
+                button.classList.add('w-full', 'p-4', 'rounded-lg', 'text-left', 'transition', 'duration-200', 'border', 'h-full', 'bg-slate-700', 'border-slate-600', 'hover:bg-blue-900/50', 'hover:border-blue-500');
+                button.onclick = () => selectAnswer(answer.type);
+                optionsContainer.appendChild(button);
+            });
+
+            updateProgressBar();
+        }
+
+        function selectAnswer(type) {
+            if (type === 'yin') {
+                yinScore++;
+            } else {
+                yangScore++;
+            }
+
+            currentQuestionIndex++;
+
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                showLoading();
+            }
+        }
+
+        function updateProgressBar() {
+            const progress = (currentQuestionIndex / questions.length) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+        
+        function showLoading() {
+            questionScreen.classList.add('hidden');
+            loadingScreen.classList.remove('hidden');
+            setTimeout(() => {
+                loadingScreen.classList.add('hidden');
+                resultScreen.classList.remove('hidden');
+                displayResults();
+            }, 2500); // Simulate calculation
+        }
+
+        function displayResults() {
+            let resultData;
+            const yangPercentage = Math.round((yangScore / questions.length) * 100);
+            const yinPercentage = 100 - yangPercentage;
+
+            if (yangPercentage >= 80) {
+                resultData = {
+                    title: "The Trailblazing Force",
+                    subtitle: `Predominantly Yang (${yangPercentage}% Yang / ${yinPercentage}% Yin)`,
+                    description: `
+                        <p>Your energy is overwhelmingly Yang. You are a natural leader, driven by action, ambition, and a desire to make things happen. You thrive in dynamic environments and are not afraid to take risks to achieve your goals.</p>
+                        <h4 class="font-semibold text-white mt-4 mb-2">Key Traits:</h4>
+                        <ul class="list-disc list-inside space-y-1"><li>Decisive & Goal-Oriented</li><li>Highly Energetic & Charismatic</li><li>Direct & Assertive</li></ul>
+                        <h4 class="font-semibold text-white mt-4 mb-2">Potential Challenge:</h4>
+                        <p>A risk of burnout or impatience. You may overlook the need for rest and reflection, potentially straining yourself and your relationships.</p>
+                        <h4 class="font-semibold text-white mt-4 mb-2">Path to Harmony:</h4>
+                        <p>Intentionally schedule 'Yin' time: moments of quiet solitude, unstructured relaxation, and activities that require listening rather than speaking.</p>
+                    `
+                };
+            } else if (yangPercentage >= 60) {
+                resultData = {
+                    title: "The Dynamic Achiever",
+                    subtitle: `Leaning Yang (${yangPercentage}% Yang / ${yinPercentage}% Yin)`,
+                    description: `
+                        <p>Your nature leans towards Yang. You are proactive, logical, and enjoy structure and progress. You are effective at turning ideas into reality and are motivated by accomplishment and forward momentum.</p>
+                        <h4 class="font-semibold text-white mt-4 mb-2">Key Traits:</h4>
+                        <ul class="list-disc list-inside space-y-1"><li>Productive & Organized</li><li>Logical Problem-Solver</li><li>Motivated & Reliable</li></ul>
+                        <h4 class="font-semibold text-white mt-4 mb-2">Potential Challenge:</h4>
+                        <p>You may become overly focused on 'doing' and neglect the importance of 'being'. This can lead to a disconnect from your intuition and emotions.</p>
+                        <h4 class="font-semibold text-white mt-4 mb-2">Path to Harmony:</h4>
+                        <p>Practice mindfulness and make space for creative, non-goal-oriented hobbies. Trust your gut feeling more often in small decisions.</p>
+                    `
+                };
+            } else if (yangPercentage >= 40) {
+                resultData = {
+                    title: "The Harmonious Weaver",
+                    subtitle: `Balanced (${yangPercentage}% Yang / ${yinPercentage}% Yin)`,
+                    description: `
+                        <p>You possess a rare and powerful balance between Yin and Yang. You can be assertive when needed and receptive when required. This adaptability allows you to navigate life's complexities with grace and resilience.</p>
+                        <h4 class="font-semibold text-white mt-4 mb-2">Key Traits:</h4>
+                        <ul class="list-disc list-inside space-y-1"><li>Adaptable & Flexible</li><li>Resilient & Centered</li><li>Effective Communicator</li></ul>
+                        <h4 class="font-semibold text-white mt-4 mb-2">Potential Challenge:</h4>
+                        <p>The main challenge is maintaining this equilibrium. Life's demands can easily pull you too far in one direction. Self-awareness is your greatest tool.</p>
+                        <h4 class="font-semibold text-white mt-4 mb-2">Path to Harmony:</h4>
+                        <p>Continue to nurture both sides. Regularly check in with yourself: do you need more rest or more action right now? Consciously choose activities that serve your current needs.</p>
+                    `
+                };
+            } else if (yangPercentage >= 20) {
+                resultData = {
+                    title: "The Intuitive Nurturer",
+                    subtitle: `Leaning Yin (${yangPercentage}% Yang / ${yinPercentage}% Yin)`,
+                    description: `
+                        <p>Your nature leans towards Yin. You are empathetic, introspective, and highly attuned to the emotional and energetic currents around you. You find strength in stillness and connection.</p>
+                        <h4 class="font-semibold text-white mt-4 mb-2">Key Traits:</h4>
+                        <ul class="list-disc list-inside space-y-1"><li>Empathetic & Compassionate</li><li>Creative & Imaginative</li><li>Patient & Thoughtful</li></ul>
+                        <h4 class="font-semibold text-white mt-4 mb-2">Potential Challenge:</h4>
+                        <p>You may sometimes struggle with self-doubt or find it difficult to assert your needs. You might absorb the stress of others too easily.</p>
+                        <h4 class="font-semibold text-white mt-4 mb-2">Path to Harmony:</h4>
+                        <p>Practice setting healthy boundaries. Engage in gentle 'Yang' activities, like starting a small, manageable project or speaking your mind in a safe environment to build confidence.</p>
+                    `
+                };
+            } else {
+                resultData = {
+                    title: "The Reflective Sage",
+                    subtitle: `Predominantly Yin (${yangPercentage}% Yang / ${yinPercentage}% Yin)`,
+                    description: `
+                        <p>Your energy is overwhelmingly Yin. You possess a deep inner world and a powerful intuition. You are a source of calm and wisdom for those around you, finding profound meaning in reflection and observation.</p>
+                        <h4 class="font-semibold text-white mt-4 mb-2">Key Traits:</h4>
+                        <ul class="list-disc list-inside space-y-1"><li>Deeply Intuitive & Wise</li><li>Calm & Serene Presence</li><li>Perceptive & Contemplative</li></ul>
+                        <h4 class="font-semibold text-white mt-4 mb-2">Potential Challenge:</h4>
+                        <p>A tendency towards inaction or becoming 'stuck' in thought. Bringing your profound insights into the physical world can be a hurdle.</p>
+                        <h4 class="font-semibold text-white mt-4 mb-2">Path to Harmony:</h4>
+                        <p>Embrace small, tangible actions. Translate one insight into a concrete step, no matter how small. Physical movement, like walking or stretching, can help bridge your inner and outer worlds.</p>
+                    `
+                };
+            }
+
+            resultTitle.textContent = resultData.title;
+            resultSubtitle.textContent = resultData.subtitle;
+            resultDescription.innerHTML = resultData.description;
+        }
+
+        // --- Event Listeners ---
+        startBtn.addEventListener('click', startQuiz);
+    </script>
+</body>
+</html>
